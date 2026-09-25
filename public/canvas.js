@@ -63,6 +63,21 @@
     setTimeout(() => toast.classList.remove('visible'), 2000);
   }
 
+  connectionStatus.style.cursor = 'pointer';
+  connectionStatus.title = 'Click to configure backend WebSocket URL';
+  connectionStatus.addEventListener('click', () => {
+    const current = localStorage.getItem('whiteboard_backend_url') || '';
+    const newUrl = prompt('Enter your live WebSocket backend URL (e.g. https://your-backend.onrender.com):', current);
+    if (newUrl !== null) {
+      if (newUrl.trim()) {
+        localStorage.setItem('whiteboard_backend_url', newUrl.trim());
+      } else {
+        localStorage.removeItem('whiteboard_backend_url');
+      }
+      window.location.reload();
+    }
+  });
+
   function setConnectionStatus(connected) {
     connectionStatus.textContent = connected ? 'Connected' : 'Not connected';
     connectionStatus.classList.toggle('connected', connected);
