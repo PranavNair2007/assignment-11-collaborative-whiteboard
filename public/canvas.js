@@ -17,7 +17,17 @@
   const activeUsersEl = document.getElementById('activeUsers');
   const toast = document.getElementById('toast');
 
-  const socket = io();
+  // ---------- Setup from URL (?board=demo & ?server=https://...) ----------
+  const urlParams = new URLSearchParams(window.location.search);
+  const prefilledBoard = urlParams.get('board');
+  if (prefilledBoard) boardIdInput.value = prefilledBoard;
+
+  const serverUrl = urlParams.get('server') || window.BACKEND_URL || localStorage.getItem('whiteboard_backend_url') || (window.location.hostname.includes('vercel.app') ? 'https://collaborative-whiteboard-backend-r4lq.onrender.com' : undefined);
+  if (urlParams.get('server')) {
+    localStorage.setItem('whiteboard_backend_url', urlParams.get('server'));
+  }
+
+  const socket = serverUrl ? io(serverUrl, { transports: ['websocket', 'polling'] }) : io();
 
   let boardId = null;
   let username = null;
@@ -30,11 +40,6 @@
   const cursorEls = {};
   // userId -> { username, color }
   const knownUsers = {};
-
-  // ---------- Setup from URL (?board=demo) ----------
-  const urlParams = new URLSearchParams(window.location.search);
-  const prefilledBoard = urlParams.get('board');
-  if (prefilledBoard) boardIdInput.value = prefilledBoard;
 
   // ---------- Canvas sizing ----------
   function resizeCanvas() {
@@ -210,6 +215,10 @@
   // ---------- Socket events ----------
   socket.on('connect', () => setConnectionStatus(true));
   socket.on('disconnect', () => setConnectionStatus(false));
+  socket.on('connect_error', (err) => {
+    setConnectionStatus(false);
+    console.warn('[Socket] Connection error:', err.message);
+  });
 
   socket.on('board:error', ({ message }) => {
     showToast(message);
